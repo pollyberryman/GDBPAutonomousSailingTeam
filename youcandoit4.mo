@@ -1,0 +1,65 @@
+model youcandoit4
+  Modelica.Mechanics.Translational.Sources.Speed speed1 annotation(
+    Placement(transformation(origin = {-76, -52}, extent = {{-10, -10}, {10, 10}})));
+  Modelica.Mechanics.Rotational.Components.Inertia inertia(J = 0.1) annotation(
+    Placement(transformation(origin = {-4, -10}, extent = {{-10, -10}, {10, 10}})));
+  Modelica.Mechanics.Rotational.Sensors.SpeedSensor speedSensor annotation(
+    Placement(transformation(origin = {-2, -82}, extent = {{-10, -10}, {10, 10}})));
+  Modelica.Mechanics.Rotational.Sources.Speed speed annotation(
+    Placement(transformation(origin = {58, -64}, extent = {{-10, -10}, {10, 10}})));
+  Modelica.Blocks.Sources.Constant const(k = 8) annotation(
+    Placement(transformation(origin = {-130, -54}, extent = {{-10, -10}, {10, 10}})));
+  Modelica.Blocks.Math.Gain gain(k = 10) annotation(
+    Placement(transformation(origin = {26, -82}, extent = {{-10, -10}, {10, 10}})));
+  GDBPPackage.motorTorqueDemandElectrical motorTorqueDemandElectrical annotation(
+    Placement(transformation(origin = {94, -42}, extent = {{-10, -10}, {10, 10}})));
+  Modelica.Electrical.Analog.Basic.Ground ground annotation(
+    Placement(transformation(origin = {126, -98}, extent = {{-10, -10}, {10, 10}})));
+  GDBPPackage.battery3 battery3(SOC_initial = 0.3) annotation(
+    Placement(transformation(origin = {94, -6}, extent = {{-10, -10}, {10, 10}})));
+  GDBP2.perfectTurbineTSRoptpitchcontrol perfectTurbineTSRoptpitchcontrol(maxTurbinePower(displayUnit = "kW") = 1.3e5) annotation(
+    Placement(transformation(origin = {-30, -52}, extent = {{-10, -10}, {10, 10}})));
+  GDBP2.perfectTurbineTSRopt perfectTurbineTSRopt annotation(
+    Placement(transformation(origin = {-24, -118}, extent = {{-10, -10}, {10, 10}})));
+  Modelica.Mechanics.Rotational.Components.Inertia inertia1(J = 0.1) annotation(
+    Placement(transformation(origin = {22, -116}, extent = {{-10, -10}, {10, 10}})));
+  GDBP2.TSRcontrolNOPIDSOClimit tSRcontrolNOPIDSOClimit annotation(
+    Placement(transformation(origin = {38, -32}, extent = {{-10, -10}, {10, 10}})));
+equation
+  connect(const.y, speed1.v_ref) annotation(
+    Line(points = {{-119, -54}, {-109, -54}, {-109, -52}, {-89, -52}}, color = {0, 0, 127}));
+  connect(speedSensor.w, gain.u) annotation(
+    Line(points = {{9, -82}, {13, -82}}, color = {0, 0, 127}));
+  connect(gain.y, speed.w_ref) annotation(
+    Line(points = {{37, -82}, {35, -82}, {35, -64}, {45, -64}}, color = {0, 0, 127}));
+  connect(motorTorqueDemandElectrical.shaft, speed.flange) annotation(
+    Line(points = {{94, -52}, {94, -64}, {68, -64}}));
+  connect(battery3.pin_p, motorTorqueDemandElectrical.pin_p) annotation(
+    Line(points = {{90, -0.6}, {72, -0.6}, {72, -41.6}, {84, -41.6}}, color = {0, 0, 255}));
+  connect(battery3.pin_n, motorTorqueDemandElectrical.pin_n) annotation(
+    Line(points = {{98, -0.6}, {120, -0.6}, {120, -41.6}, {104, -41.6}}, color = {0, 0, 255}));
+  connect(ground.p, battery3.pin_n) annotation(
+    Line(points = {{126, -88}, {122, -88}, {122, -1}, {98, -1}}, color = {0, 0, 255}));
+  connect(perfectTurbineTSRoptpitchcontrol.Translational, speed1.flange) annotation(
+    Line(points = {{-40, -52}, {-66, -52}}, color = {0, 127, 0}));
+  connect(perfectTurbineTSRoptpitchcontrol.Rotational, inertia.flange_a) annotation(
+    Line(points = {{-30, -42}, {-32, -42}, {-32, -10}, {-14, -10}}));
+  connect(perfectTurbineTSRoptpitchcontrol.Rotational, speedSensor.flange) annotation(
+    Line(points = {{-30, -42}, {-12, -42}, {-12, -82}}));
+  connect(speed1.flange, perfectTurbineTSRopt.Translational) annotation(
+    Line(points = {{-66, -52}, {-50, -52}, {-50, -118}, {-34, -118}}, color = {0, 127, 0}));
+  connect(perfectTurbineTSRopt.Rotational, inertia1.flange_a) annotation(
+    Line(points = {{-24, -108}, {10, -108}, {10, -116}, {12, -116}}));
+  connect(perfectTurbineTSRoptpitchcontrol.turbineTorque, tSRcontrolNOPIDSOClimit.turbineTorque) annotation(
+    Line(points = {{-20, -48}, {16, -48}, {16, -32}, {28, -32}}, color = {0, 0, 127}));
+  connect(tSRcontrolNOPIDSOClimit.motorTorqueDemand, motorTorqueDemandElectrical.motorTorqueDemand) annotation(
+    Line(points = {{48, -32}, {88, -32}}, color = {0, 0, 127}));
+  connect(battery3.SOC, tSRcontrolNOPIDSOClimit.batterySOC) annotation(
+    Line(points = {{94, -12}, {56, -12}, {56, -46}, {34, -46}, {34, -42}, {38, -42}}, color = {0, 0, 127}));
+  annotation(
+    experiment(StartTime = 0, StopTime = 4660, Tolerance = 1e-06, Interval = 0.1),
+    Diagram(coordinateSystem(extent = {{-150, -150}, {150, 150}})),
+    Icon(coordinateSystem(extent = {{-150, -150}, {150, 150}})),
+    version = "",
+    uses);
+end youcandoit4;

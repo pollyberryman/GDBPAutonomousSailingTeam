@@ -7,6 +7,7 @@ import time as t
 import datetime as dt
 from timezonefinder import TimezoneFinder
 import pytz
+import numpy as np
 
 
 def get_data(request,dataset,directory):
@@ -21,11 +22,11 @@ def get_data(request,dataset,directory):
         tf = TimezoneFinder()
         timezone_name = tf.timezone_at(lat=latitude, lng=longitude)
         print(timezone_name)
-        filename = ''
-        for var in request["variable"]:
-            filename+=var+'_'
-        filename += timenow+'.grib'
-        filelocation = directory+'\\'+filename
+
+        num_vars = len(request["variable"])
+
+        filename = f"{timenow}.grib"
+        filelocation = os.path.join(directory,filename)
         
         tempfile = os.listdir()
         tempfile = str(tempfile[0]) 
@@ -45,20 +46,6 @@ def example(directory,filename):
         gid = ec.codes_grib_new_from_file(f)
         if gid is None: break
         print ("\n\n-- GRIB %d --" % (count))
-        # codes_dump should only be used for diagnostic purposes.
-        #  
-        #   To process the data and grib headers, you will have to use
-        #   codes_get and request the decoding of the keys you need,
-        #   e.g. the date, the time, the parameter, the "level".
-        #  
- 
-        # codes_dump(gid)
- 
-        #  
-        # Replace this call to codes_dump with calls to codes_get
-        # for each key/value pair needed, e.g.:
-        #   
-        #   idate = codes_get(gid,'date')
  
         edition = ec.codes_get(gid,'edition')
         shortName = ec.codes_get(gid,'shortName')
@@ -221,19 +208,37 @@ def correctTimeZones(df, timezone_name, listOfDateTimeColumns):
 
     return df_sorted
 
+
 ######################################################################
 
-dataset = "reanalysis-era5-land"
-#dataset = "reanalysis-era5-single-levels"
+#dataset = "reanalysis-era5-land"
+dataset = "reanalysis-era5-single-levels"
 request = {
     "product_type": ["reanalysis"],
-    "variable": [
-        "2m_dewpoint_temperature"],
-    "year": [ "2023"],
-    "month": [
-        "01"
+    "variable": ["10m_u_component_of_wind",
+        "10m_v_component_of_wind",
+        "mean_wave_direction",
+        "mean_wave_period",
+        "significant_height_of_combined_wind_waves_and_swell"
         ],
-    "day": ["15"],
+    "year": [ "2025"],
+    "month": [  
+        "01", "02", "03",
+        "04", "05", "06",
+        "07", "08", "09",
+        "10", "11", "12"
+        ],
+    "day": ["01", "02", "03",
+        "04", "05", "06",
+        "07", "08", "09",
+        "10", "11", "12",
+        "13", "14", "15",
+        "16", "17", "18",
+        "19", "20", "21",
+        "22", "23", "24",
+        "25", "26", "27",
+        "28", "29", "30",
+        "31"],
     "time": [
         "00:00", "01:00", "02:00",
         "03:00", "04:00", "05:00",
@@ -246,23 +251,72 @@ request = {
     ],
     "data_format": "grib",
     "download_format": "unarchived",
-    "area": [19.931741,-99.633485,18.931741,-98.633485]
+    "area": [34, -42.5, 33, -41.5]
 }
 
 listOfDateTimeColumns = ['years', 'months', 'days', 'dates', 'times',  'datetimes', 'fulldatetimes']
 listOfFlux = ["Surface short-wave (solar) radiation downwards"]
-notFluxVariable = ['2 metre dewpoint temperature', '2 metre temperature']
+notFluxVariable = ['2 metre dewpoint temperature', '2 metre temperature',"10m_u_component_of_wind",
+        "10m_v_component_of_wind",
+        "mean_wave_direction",
+        "mean_wave_period",
+        "significant_height_of_combined_wind_waves_and_swell",
+        "instantaneous_10m_wind_gust"]
 directory='C:\\Users\\Polly Berryman\\GitProjects\\GDBPAutonomousSailingTeam\\'
 filename, timezone_name = get_data(request=request,dataset=dataset,directory=directory)
 filenamenogrib = os.path.splitext(filename)[0]
-filenamecsv = directory+filenamenogrib+'_MEXICOCITY.csv'
+originaldf = directory+filenamenogrib+'_original'+'.csv'
+filenamecsv = directory+filenamenogrib+'.csv'
 
 data = example(directory,filename)
 print(data)
 df = pd.DataFrame(data)
 print(df)
-df = flux2(df, listOfFlux)
-df = correctNonFlux(df, notFluxVariable)
-df = correctTimeZones(df, timezone_name, listOfDateTimeColumns)
-print(df)
-df.to_csv(filenamecsv)
+
+#df.to_csv(originaldf)
+#df = flux2(df, listOfFlux)
+#df = correctNonFlux(df, notFluxVariable)
+#df = correctTimeZones(df, timezone_name, listOfDateTimeColumns)
+#print(df)
+#df.to_csv(filenamecsv)
+
+df['UnixSeconds'] = df['fulldatetimesNEW'].astype('int64') // 10**9
+
+U = df['10 metre U wind component']
+V = df['10 metre V wind component']
+df['windSpeed'] = np.sqrt(U*U + V*V)
+df['windDirRad'] = np.arctan2(-U, -V)    # meteorological direction (from)
+
+
+df = df.rename(columns={
+    '10 metre U wind component': 'windU10',
+    '10 metre V wind component': 'windV10',
+    'Mean wave direction': 'waveDirection',
+    'Mean wave period': 'wavePeriod',
+    'Significant height of combined wind waves and swell': 'waveHeight'
+})
+
+df['waveDirRad'] = np.deg2rad(df['waveDirection'])
+
+
+df_modelica = df[[
+    'UnixSeconds',
+    'years',
+    'months',
+    'days',
+    'times',     
+    'windU10',
+    'windV10',
+    'windSpeed',
+    'windDirRad',
+    'waveDirRad',
+    'wavePeriod',
+    'waveHeight'
+]]
+
+print(df_modelica)
+
+df_modelica = df_modelica.sort_values(by='UnixSeconds').reset_index(drop=True)
+
+final_name = f"{directory}FINAL_{filenamenogrib}.csv"
+df_modelica.to_csv(final_name, index=False)

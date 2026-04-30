@@ -1,0 +1,26 @@
+model turbineTest
+  GDBPPackage.turbine turbine annotation(
+    Placement(transformation(origin = {-30, 0}, extent = {{-10, -10}, {10, 10}})));
+  Modelica.Mechanics.Translational.Sources.ConstantSpeed hullSpeed(v_fixed = 6.7)  annotation(
+    Placement(transformation(origin = {-74, 0}, extent = {{-10, -10}, {10, 10}})));
+  Modelica.Mechanics.Rotational.Sources.ConstantSpeed constantSpeed(w_fixed(displayUnit = "rpm") = 31.415926535897935)  annotation(
+    Placement(transformation(origin = {-56, 56}, extent = {{-10, -10}, {10, 10}})));
+  GDBPPackage.motorTorqueDemand motorTorqueDemand annotation(
+    Placement(transformation(origin = {70, 0}, extent = {{-10, -10}, {10, 10}})));
+  Modelica.Mechanics.Rotational.Sources.ConstantSpeed constantSpeed1(w_fixed(displayUnit = "rpm") = 314.1592653589793) annotation(
+    Placement(transformation(origin = {28, 0}, extent = {{-10, -10}, {10, 10}})));
+  Modelica.Blocks.Sources.Constant const(k = 450)  annotation(
+    Placement(transformation(origin = {54, 56}, extent = {{-10, -10}, {10, 10}})));
+equation
+  connect(hullSpeed.flange, turbine.Translational) annotation(
+    Line(points = {{-64, 0}, {-40, 0}}, color = {0, 127, 0}));
+  connect(constantSpeed.flange, turbine.Rotational) annotation(
+    Line(points = {{-46, 56}, {-30, 56}, {-30, 10}}));
+  connect(constantSpeed1.flange, motorTorqueDemand.shaft) annotation(
+    Line(points = {{38, 0}, {60, 0}}));
+  connect(const.y, motorTorqueDemand.motorTorqueDemand) annotation(
+    Line(points = {{66, 56}, {70, 56}, {70, 10}}, color = {0, 0, 127}));
+  annotation(
+    uses(Modelica(version = "4.1.0")),
+  experiment(StartTime = 0, StopTime = 10, Tolerance = 1e-06, Interval = 0.02));
+end turbineTest;

@@ -1,0 +1,9 @@
+turbine
+motorTorqueDemand
+TSRcontrol
+simpleGearRatio
+perfectTurbineTSRopt
+TSRcontrolNOPID
+perfectTurbineTSRoptpitchcontrol
+TSRcontrolNOPIDSOClimit
+motorTorqueDemandElectrical
